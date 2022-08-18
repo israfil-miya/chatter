@@ -6,15 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gitpush": "npm run format:fix && npm run format && git add . && git commit -m 'Some fixes' && git push",
+    "format": "prettier --check --ignore-path .gitignore README.md .",
+    "format:fix": "prettier --write --ignore-path .gitignore README.md ."
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "all"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "mongoose": "^6.5.0",
     "next": "12.2.2",
+    "next-auth": "^4.10.3",
+    "nextjs-progressbar": "^0.0.14",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-toastify": "^9.0.7",
+    "sharp": "^0.30.7",
+    "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1",
+    "time-ago": "^0.2.1"
   },
   "devDependencies": {
     "eslint": "8.20.0",
-    "eslint-config-next": "12.2.2"
+    "eslint-config-next": "^0.2.4",
+    "prettier": "^2.7.1"
   }
 }
