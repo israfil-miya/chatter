@@ -3,30 +3,50 @@ import Tabs from '../components/Tabs.js'
 import Link from 'next/link'
 import Chats from '../components/Chatslist.js'
 import { useSession, getSession } from "next-auth/react"
-export default function Home() {
+export default function Home({ msgList }) {
   return (
     <>
       <Header />
       <Tabs tabName="chats" />
-      <Chats
-        personname="Israfil miya"
-        lastmsgby="You"
-        lastmsg="Hi how are you"
-        uid="123"
-      />
-      <Chats
-        personname="Parvej Hossain"
-        lastmsgby="You"
-        lastmsg="Can you fix the schedule next day morning?"
-        uid="123"
-      />
-      <Chats
-        personname="Jubayer Islam"
-        lastmsgby="User"
-        lastmsg="Hey wanna go party"
-        uid="123"
-      />
+
+      {
+
+        msgList.map((data, index) => {
+          if (data.length != 0) {
+            return (
+              <Chats
+                key={index}
+                personname={data.name}
+                lastmsgby={data.isMe ? "You" : data.name}
+                lastmsg={data.messageObj.message}
+                uid={data.partnerId}
+              />
+            )
+          } else {
+            return (<div key={index}></div>)
+          }
+        })
+      }
+
       <p className="text-muted text-center p-3"> No more chats ! </p>
     </>
   )
+}
+
+export async function getServerSideProps(context) {
+  const session = await getSession(context)
+  const res = await fetch(`${process.env.BASE_URL}/api/lastMessage-api`, {
+    method: 'POST',
+    body: JSON.stringify({ uid: session.user.id }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  const resData = await res.json()
+  console.log('ChatsData', resData)
+  return {
+    props: {
+      msgList: resData
+    }
+  }
 }
