@@ -1,11 +1,10 @@
 import Header from '../../components/Header.js'
 import Link from 'next/link'
 import io from 'socket.io-client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MyMsg, PartnerMsg } from '../../components/MsgTamplate'
 import { useSession, getSession } from "next-auth/react"
 import { toast } from 'react-toastify';
-
 let socket
 
 export default function Chatting({ PartnerInfo }) {
@@ -15,6 +14,8 @@ export default function Chatting({ PartnerInfo }) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState([])
   const [file, setFile] = useState()
+  const messageEl = useRef(null);
+  const timelineLoaded = useRef(false);
 
   async function getImage(imageFile) {
     const res = await fetch(`/api/compressImage`, {
@@ -42,20 +43,32 @@ export default function Chatting({ PartnerInfo }) {
   }
 
   useEffect(() => {
-    socketInitializer()
-    async function fetchDbMessages() {
-      const allMessages = await retrieveMessage(1)
+    if (!timelineLoaded.current) {
 
-      if (allMessages.length) {
-        allMessages.map((data, index) => {
-          setMessages((currentMsg) => [
-            ...currentMsg,
-            { uid: (data.partnerId != PartnerInfo._id) ? PartnerInfo._id : session.user.id, username: (data.partnerId != PartnerInfo._id) ? PartnerInfo.name : session.user.name, message: data.message, msg_timestamp: data.updatedAt },
-          ])
-        })
+
+      socketInitializer()
+      async function fetchDbMessages() {
+        const allMessages = await retrieveMessage(1)
+
+        if (allMessages.length) {
+          allMessages.map((data, index) => {
+            setMessages((currentMsg) => [
+              ...currentMsg,
+              { uid: (data.partnerId != PartnerInfo._id) ? PartnerInfo._id : session.user.id, username: (data.partnerId != PartnerInfo._id) ? PartnerInfo.name : session.user.name, message: data.message, msg_timestamp: data.updatedAt },
+            ])
+          })
+        }
       }
+      fetchDbMessages()
+      if (messageEl) {
+        messageEl.current.addEventListener('DOMNodeInserted', event => {
+          const { currentTarget: target } = event;
+          target.scroll({ top: target.scrollHeight, behavior: 'auto' });
+        });
+      }
+
+      timelineLoaded.current = true;
     }
-    fetchDbMessages()
   }, [setMessages, session, PartnerInfo])
 
   const socketInitializer = async () => {
@@ -88,7 +101,7 @@ export default function Chatting({ PartnerInfo }) {
     }
     if (message.length) {
 
-      socket.emit('createdMessage', { uid: myuid, username, message, partnerId: PartnerInfo._id, msg_timestamp: timestamp })
+      socket?.emit('createdMessage', { uid: myuid, username, message, partnerId: PartnerInfo._id, msg_timestamp: timestamp })
 
       setMessages((currentMsg) => [
         ...currentMsg,
@@ -147,18 +160,20 @@ export default function Chatting({ PartnerInfo }) {
       e.target.reset();
     }
   }
-  function enterKeyPressed(event) {
-    if (event.keyCode == 13) {
-      console.log("Enter key is pressed");
-      sendMessage()
+
+  function enterKeyPressed(e) {
+    if (e.shiftKey) {
+      if (e.which == 13) {
+        sendMessage()
+      }
     } else {
-      return false;
+      return false
     }
   }
   return (
     <>
       <Header activeNow={true} personName={PartnerInfo.name} headerFor="chatting" />
-      <div className="chatBox bg-success p-2 shadow-sm" id="chatbox-div">
+      <div ref={messageEl} className="chatBox bg-success p-2 shadow-sm" id="chatbox-div">
         {messages.length != 0 ? (
           messages.map((data, id) => {
             let isBase64Valid
@@ -203,11 +218,13 @@ export default function Chatting({ PartnerInfo }) {
             onChange={(e) => setFile(e.target.files[0])}
             className="form-control file-input" />
           <input
+            autocomplete="off"
+            autofocus="true"
             placeholder="Say something..."
             value={message}
             onkeypress={e => enterKeyPressed(e)}
             onChange={(e) => setMessage(e.target.value)}
-            className="form-control" />
+            className="form-control"/>
           <button
             type="submit"
             className="btn btn-outline-success"

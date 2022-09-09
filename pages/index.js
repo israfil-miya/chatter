@@ -3,7 +3,26 @@ import Tabs from '../components/Tabs.js'
 import Link from 'next/link'
 import Chats from '../components/Chatslist.js'
 import { useSession, getSession } from "next-auth/react"
+import { toast } from 'react-toastify';
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
+
 export default function Home({ msgList }) {
+  const router = useRouter()
+  useEffect(() => {
+    const { error, success } = router.query
+    console.log(success)
+    console.log(error)
+    if (error) {
+      toast.error(error, { toastId: "error" })
+      router.replace("/")
+    }
+    if (success) {
+      toast.success(success, { toastId: "success" })
+      router.replace("/")
+    }
+  }, [router]);
+
   return (
     <>
       <Header />

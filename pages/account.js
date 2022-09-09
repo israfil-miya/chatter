@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
+
 import {toast } from 'react-toastify';
 
 export default function account() {
@@ -253,7 +254,8 @@ useEffect(()=>{
             font-size: 26px
           }
           .main-wrapper {
-            min-height: 100vh;
+            overflow: hidden;
+            min-height: 100%;
             color: white;
           }
           .details {

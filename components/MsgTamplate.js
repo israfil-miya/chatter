@@ -2,10 +2,13 @@ import ta from "time-ago"
 import Image from 'next/image'
 
 
+
 export function PartnerMsg({ name, msg, timestamp, isImage }) {
+  
   return (
     <>
       <div className="receive text-break text-wrap my-1 message message-left">
+        
         <p className="messageAgo">{ta.ago(timestamp)}</p>
         <p className="personName">{name}</p>
         {
@@ -57,6 +60,7 @@ export function MyMsg({ msg, timestamp, isImage }) {
   return (
     <>
       <div className="send text-break text-wrap float-end message my-1 message-right">
+
         <p className="messageAgo">{ta.ago(timestamp)}</p>
         <p className="personName">You</p>
         {
