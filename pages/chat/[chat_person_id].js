@@ -1,5 +1,4 @@
 import Header from '../../components/Header.js'
-import Link from 'next/link'
 import io from 'socket.io-client'
 import { useState, useEffect, useRef } from 'react'
 import { MyMsg, PartnerMsg } from '../../components/MsgTamplate'
@@ -26,7 +25,7 @@ export default function Chatting({ PartnerInfo }) {
       },
     })
     const resData = await res.json()
-    console.log("image compression", resData)
+    // console.log("image compression", resData)
     return resData.base64Image
   }
 
@@ -78,22 +77,41 @@ export default function Chatting({ PartnerInfo }) {
     socket = io()
 
     socket.on('newIncomingMessage', async (msg) => {
-      console.log('incoming msg', msg)
+      // console.log('incoming msg', msg)
       if (msg.partnerId == myuid && PartnerInfo._id == msg.uid) {
         setMessages((currentMsg) => [
           ...currentMsg,
           { uid: msg.uid, username: msg.username, message: msg.message, msg_timestamp: msg.msg_timestamp },
         ])
-        console.log('all messages', messages)
+        // console.log('all messages', messages)
+        document.getElementsByClassName("typing")[0].innerHTML = ""
+      }
+      else {
+        return
+      }
+    })
+
+    socket.on('userTyping', async (typingData) => {
+
+      if (typingData.partnerId == myuid && PartnerInfo._id == typingData.uid) {
+
+        document.getElementsByClassName("typing")[0].innerHTML = typingData.name + " is typing..."
+        setTimeout(() => {
+          document.getElementsByClassName("typing")[0].innerHTML = ""
+        }, 3000);
       }
       else {
         return
       }
     })
   }
-
+  const resetInputs = () => {
+    setMessage("")
+    document.getElementById("message-form").reset()
+    return true
+  }
   const sendMessage = async (e) => {
-    e.preventDefault()
+
     let timestamp = Date.now() - 1000
     if (!message && !file) {
       toast.error("Cannot send empty message", { toastId: "error" })
@@ -107,7 +125,7 @@ export default function Chatting({ PartnerInfo }) {
         ...currentMsg,
         { uid: myuid, username, message, msg_timestamp: timestamp },
       ])
-      console.log('Submit event ', messages)
+      // console.log('Submit event ', messages)
 
       const res = await fetch(`/api/chats-api`, {
         method: 'POST',
@@ -117,10 +135,10 @@ export default function Chatting({ PartnerInfo }) {
         },
       })
       const resData = await res.json()
-      console.log("Message DB Info", resData.UserSide)
+      // console.log("Message DB Info", resData.UserSide)
 
-      e.target.reset();
-      setMessage('')
+      resetInputs()
+
     }
     if (file) {
       var reader = new FileReader();
@@ -136,14 +154,14 @@ export default function Chatting({ PartnerInfo }) {
         const base64str = evt.target.result.split(',')[1];
 
         const imageFile = Buffer.from(base64str, 'base64'); //encode image into bytes
-        console.log('FileSize: ' + imageFile.length);
+        // console.log('FileSize: ' + imageFile.length);
         if (imageFile.length > 4000000) {
           toast.error('Image size limit exceeded (limit: 4mb)', { toastId: 'error' })
           return
         }
         else {
           const reducedImageBase64 = await getImage(evt.target.result)
-          console.log(reducedImageBase64)
+          // console.log(reducedImageBase64)
           const res = await fetch(`/api/chats-api`, {
             method: 'POST',
             body: JSON.stringify({ id: session.user.id, partnerId: PartnerInfo._id, message: reducedImageBase64 }),
@@ -152,23 +170,24 @@ export default function Chatting({ PartnerInfo }) {
             },
           })
           const resData = await res.json()
-          console.log("Message DB Info", resData.UserSide)
+          // console.log("Message DB Info", resData.UserSide)
         }
 
       };
-      setFile(null)
-      e.target.reset();
+
+      resetInputs()
+
     }
   }
 
   function enterKeyPressed(e) {
-    if (e.shiftKey) {
-      if (e.which == 13) {
-        sendMessage()
-      }
+    if (e.charCode === 13 && e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
     } else {
-      return false
+      socket.emit('typing', { partnerId: PartnerInfo._id, uid: myuid, name: session.user.name })
     }
+
   }
   return (
     <>
@@ -208,23 +227,26 @@ export default function Chatting({ PartnerInfo }) {
         ) : (
           <p className="no-message">No messages</p>
         )}
+        <p className='bg-light typing'></p>
       </div>
-      <form onSubmit={sendMessage}>
+      <form id="message-form" onSubmit={sendMessage}>
         <div className="input-group my-3">
           <input
             id="fileupload"
             type="file"
-            onkeypress={e => enterKeyPressed(e)}
+            onKeyPress={e => enterKeyPressed(e)}
             onChange={(e) => setFile(e.target.files[0])}
             className="form-control file-input" />
-          <input
-            autocomplete="off"
-            autofocus="true"
+          <textarea
+            rows={1}
+            cols={1}
+            autoComplete="off"
+            autoFocus={true}
             placeholder="Say something..."
             value={message}
-            onkeypress={e => enterKeyPressed(e)}
+            onKeyPress={e => enterKeyPressed(e)}
             onChange={(e) => setMessage(e.target.value)}
-            className="form-control"/>
+            className="form-control" ></textarea>
           <button
             type="submit"
             className="btn btn-outline-success"
@@ -239,12 +261,19 @@ export default function Chatting({ PartnerInfo }) {
           overflow-x: hidden;
           overflow-y: auto;
           height: 450px;
+          padding: 2px auto;
         }
         .no-message {
           color:white
         }
         .file-input {
           max-width: 200px
+        }
+        .typing {
+          clear: both;
+          float: none;
+          padding: 0 10px;
+          border-radius: 4px;
         }
       `}</style>
     </>
@@ -282,7 +311,7 @@ export async function getServerSideProps(context) {
     };
   }
   else {
-    console.log(resData)
+    // console.log(resData)
     return {
       props: {
         PartnerInfo: resData.error ? {} : resData

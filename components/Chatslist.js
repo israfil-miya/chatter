@@ -4,9 +4,9 @@ export default function Chats({ personname, lastmsgby, lastmsg, uid }) {
     <>
       <Link href={{ pathname: '/chat/' + uid }}>
         <a>
-          <div className="chat-person my-3 rounded mx-2 p-3 bg-success">
+          <div className="chat-person text-break my-3 rounded mx-2 p-3 bg-success">
             <span className="chat-name">{personname}</span>
-            <small className="last-chat">
+            <small className="last-chat text-break">
               {lastmsgby}: {lastmsg}
             </small>
           </div>

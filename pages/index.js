@@ -1,8 +1,7 @@
 import Header from '../components/Header.js'
 import Tabs from '../components/Tabs.js'
-import Link from 'next/link'
 import Chats from '../components/Chatslist.js'
-import { useSession, getSession } from "next-auth/react"
+import { getSession } from "next-auth/react"
 import { toast } from 'react-toastify';
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
@@ -11,8 +10,8 @@ export default function Home({ msgList }) {
   const router = useRouter()
   useEffect(() => {
     const { error, success } = router.query
-    console.log(success)
-    console.log(error)
+    // console.log(success)
+    // console.log(error)
     if (error) {
       toast.error(error, { toastId: "error" })
       router.replace("/")
@@ -37,7 +36,7 @@ export default function Home({ msgList }) {
                 key={index}
                 personname={data.name}
                 lastmsgby={data.isMe ? "You" : data.name}
-                lastmsg={data.messageObj.message}
+                lastmsg={data.messageObj.message.length>120 ? data.messageObj.message.slice(0,120)+"....." : data.messageObj.message}
                 uid={data.partnerId}
               />
             )
@@ -62,7 +61,7 @@ export async function getServerSideProps(context) {
     },
   })
   const resData = await res.json()
-  console.log('ChatsData', resData)
+  // console.log('ChatsData', resData)
   return {
     props: {
       msgList: resData
