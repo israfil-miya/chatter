@@ -91,14 +91,19 @@ export default function Chatting({ PartnerInfo }) {
       }
     })
 
-    socket.on('userTyping', async (typingData) => {
+
+    let timeoutId;
+    let clearTypingText = () => {
+      document.getElementsByClassName("typing")[0].innerHTML = ""
+    };
+    socket.on('userTyping', (typingData) => {
 
       if (typingData.partnerId == myuid && PartnerInfo._id == typingData.uid) {
-
         document.getElementsByClassName("typing")[0].innerHTML = typingData.name + " is typing..."
-        setTimeout(() => {
-          document.getElementsByClassName("typing")[0].innerHTML = ""
-        }, 3000);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(clearTypingText, 3000)
       }
       else {
         return
@@ -108,7 +113,6 @@ export default function Chatting({ PartnerInfo }) {
   const resetInputs = () => {
     setMessage("")
     document.getElementById("message-form").reset()
-    return true
   }
   const sendMessage = async (e) => {
 
@@ -185,7 +189,7 @@ export default function Chatting({ PartnerInfo }) {
       e.preventDefault()
       sendMessage()
     } else {
-      socket.emit('typing', { partnerId: PartnerInfo._id, uid: myuid, name: session.user.name })
+      socket.emit('typing', { partnerId: PartnerInfo._id, uid: myuid, name: session.user.name || "User" })
     }
 
   }
@@ -287,14 +291,6 @@ export async function getServerSideProps(context) {
   const res = await fetch(`${process.env.BASE_URL}/api/user`, {
     method: 'POST',
     body: JSON.stringify({ getUserInfo: true, isFriendCheck: true, uid: session.user.id, id: chat_person_id }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-
-  const apiTestCall = await fetch(`${process.env.BASE_URL}/api/lastMessage-api`, {
-    method: 'POST',
-    body: JSON.stringify({ uid: session.user.id, partnerId: chat_person_id }),
     headers: {
       'Content-Type': 'application/json',
     },

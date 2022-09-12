@@ -55,7 +55,7 @@ export async function getServerSideProps(context) {
   const session = await getSession(context)
   const res = await fetch(`${process.env.BASE_URL}/api/lastMessage-api`, {
     method: 'POST',
-    body: JSON.stringify({ uid: session.user.id }),
+    body: JSON.stringify({ uid: session?.user.id }),
     headers: {
       'Content-Type': 'application/json',
     },
